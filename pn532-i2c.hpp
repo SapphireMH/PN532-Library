@@ -13,16 +13,17 @@ class pn532_i2c {
 private:
 
 	hwlib::i2c_bus_bit_banged_scl_sda & bus;
+	hwlib::target::pin_out & rst;
 	const uint8_t addr;
 
 public:
 
-	pn532_i2c( hwlib::i2c_bus_bit_banged_scl_sda & bus, const uint8_t & addr = 0x48 );
+	pn532_i2c( hwlib::i2c_bus_bit_banged_scl_sda & bus, hwlib::target::pin_out & rst, const uint8_t & addr = 0x48 );
 
 	void get_firmware_version();
-	int8_t calculate_dcs ( std::array<uint8_t, 64> & bytes_out, size_t byte_length );
+	int8_t calculate_dcs ( std::array<uint8_t, 32> & bytes_out, size_t byte_length );
 	void wait_for_ready();
-	void read_write( std::array<uint8_t, 64> & bytes_out, size_t byte_length );
+	void read_write( std::array<uint8_t, 32> & bytes_out, size_t byte_length );
 
 };
 
