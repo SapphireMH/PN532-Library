@@ -9,10 +9,10 @@
 #############################################################################
 
 # source files in this project (main.cpp is automatically assumed)
-SOURCES := pn532-i2c.cpp
+SOURCES := pn532.cpp
 
 # header files in this project
-HEADERS := pn532-i2c.hpp
+HEADERS := pn532.hpp
 
 # other places to look for files for this project
 SEARCH  := 
