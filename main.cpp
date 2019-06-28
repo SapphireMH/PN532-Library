@@ -10,7 +10,7 @@ int main() {
 	
 	pn532 object = pn532( i2c_bus, rst, irq );
 
-	object.get_firmware_version();
-	//pn532.write_gpio( 0xBF, 0x00 );
+	//object.get_firmware_version();
+	object.write_gpio( 0x00, 0x86 );
 
 }

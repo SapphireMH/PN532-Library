@@ -34,7 +34,7 @@ pn532::pn532( hwlib::i2c_bus_bit_banged_scl_sda & i2c_bus, hwlib::target::pin_ou
 		using_i2c = true;
 		hwlib::wait_ms( 500 );
 		pn532_reset();
-		//samconfig();
+		samconfig();
 	}
 
 //pn532::pn532( hwlib::spi_bus::spi_transaction & spi_bus ):
@@ -87,21 +87,10 @@ void pn532::samconfig() {
 	
 	
 	uint8_t bytes_out[12] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, CED[0], CED[1], CED[2], DCS, POSTAMBLE};
-	uint8_t bytes_in[8];
+	size_t size_out = 12;
+	size_t size_in = 9;
 	
-	if(using_i2c) {
-		
-		// write and read bytes on the i2c bus.
-		i2c_bus.i2c_bus::write( addr ).write( bytes_out, 12 );
-		read_status_byte();
-		i2c_bus.i2c_bus::read( addr ).read( bytes_in, 8 );
-		
-	}
-	else {
-		
-		//spi_bus.write_and_read(12, bytes_out, bytes_in);
-		
-	}
+	read_write( bytes_out, size_out, size_in );
 
 }
 
@@ -133,10 +122,10 @@ void pn532::read_status_byte() {
 /// \brief
 /// Function to read the acknowledge frame.
 /// \details
-/// This function reads 6 bytes (the size of the ack/nack frame) and
-/// compares the response to the ack template, if the received data does
-/// not equal the template then the function that called this one needs
-/// to be ran again.
+/// This function reads 7 bytes (the size of the ack/nack frame + the ready
+/// byte, which we ignore.) and compares the response to the ack template,
+/// if the received data does not equal the template then the function that
+/// called this one needs to be ran again.
 
 bool pn532::read_ack_nack() {
 
@@ -168,6 +157,17 @@ bool pn532::read_ack_nack() {
 	return true;
 }
 
+/// \brief
+/// Function to read and write data to/from the pn532
+/// \details
+/// This function writes bytes_out[] to the pn532, the amount of bytes
+/// written is decided by the variable size_out and the amount of bytes
+/// read is decided by the variable size_in.
+///
+/// This function contains a retry loop for when the pn532
+/// does not acknowledge the received command, the timeout
+/// is 5 retries.
+
 void pn532::read_write( uint8_t bytes_out[], size_t & size_out, size_t & size_in ) {
 
 	uint8_t bytes_in[ size_in ];
@@ -193,6 +193,12 @@ void pn532::read_write( uint8_t bytes_out[], size_t & size_out, size_t & size_in
 	print( bytes_in, size_in );
 
 }
+
+/// \brief
+/// Function to print read bytes.
+/// \details
+/// This function is a very basic implementation to display
+/// the read bytes to console.
 
 void pn532::print( uint8_t bytes_in[], size_t & size_in ) {
 
@@ -240,20 +246,10 @@ void pn532::read_gpio() {
 	
 	
 	uint8_t bytes_out[9] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, DCS, POSTAMBLE};
-	uint8_t bytes_in[20];
+	size_t size_out = 9;
+	size_t size_in = 12;
 	
-	if( using_i2c) {
-		
-		// Write and read bytes on the i2c bus.
-		i2c_bus.i2c_bus::write( addr ).write( bytes_out, 9 );
-		i2c_bus.i2c_bus::read( addr ).read( bytes_in, 20 );
-		
-	}
-	else {
-		
-		//spi_bus.write_and_read(9, bytes_out, bytes_in);
-		
-	}
+	read_write( bytes_out, size_out, size_in );
 
 }
 
@@ -264,26 +260,16 @@ void pn532::read_gpio() {
 
 void pn532::write_gpio( uint8_t gpio_p3, uint8_t gpio_p7 ) {
 
-	uint8_t CC = 0x0C;
+	uint8_t CC = 0x0E;
 	uint8_t LEN = 4;
 	uint8_t LCS = ~LEN + 1;
 	uint8_t DCS = ~( TFI + CC + gpio_p3 + gpio_p7 ) + 1;
 	
 	
 	uint8_t bytes_out[11] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, gpio_p3, gpio_p7, DCS, POSTAMBLE};
-	uint8_t bytes_in[20];
-
-	if( using_i2c ) {
-
-		// Write and read bytes on the i2c bus.
-		i2c_bus.i2c_bus::write( addr ).write( bytes_out, 11 );
-		i2c_bus.i2c_bus::read( addr ).read( bytes_in, 20 );
-
-	}
-	else {
-		
-		//spi_bus.write_and_read(11, bytes_out, bytes_in);
-		
-	}
+	size_t size_out = 11;
+	size_t size_in = 9;
+	
+	read_write( bytes_out, size_out, size_in );
 
 }
