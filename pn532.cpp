@@ -31,13 +31,13 @@ pn532::pn532( hwlib::target::pin_oc scl, hwlib::target::pin_oc sda, hwlib::targe
 	sda( sda ),
 	i2c_bus ( hwlib::i2c_bus_bit_banged_scl_sda( scl, sda ) ),
 	rst( rst ),
-	irq( irq ),
 	addr( addr ),
 	sclk( hwlib::target::pins::d0 ),
 	mosi( hwlib::target::pins::d0 ),
 	miso( hwlib::target::pins::d0 ),
 	sel( hwlib::target::pins::d0 ),
 	spi_bus( hwlib::spi_bus_bit_banged_sclk_mosi_miso( sclk, mosi, miso) ),
+	irq( irq ),
 	using_i2c( true ),
 	irq_present( true )
 	{
@@ -60,13 +60,13 @@ pn532::pn532( hwlib::target::pin_out sclk, hwlib::target::pin_out mosi, hwlib::t
 	sda( hwlib::target::pins::d0 ),
 	i2c_bus ( hwlib::i2c_bus_bit_banged_scl_sda( scl, sda ) ),
 	rst( hwlib::target::pins::d0 ),
-	irq( irq ),
 	addr( 0 ),
 	sclk( sclk ),
 	mosi( mosi ),
 	miso( miso ),
 	sel( sel ),
 	spi_bus( hwlib::spi_bus_bit_banged_sclk_mosi_miso( sclk, mosi, miso) ),
+	irq( irq ),
 	using_i2c( false ),
 	irq_present( false )
 	{

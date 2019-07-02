@@ -1,5 +1,7 @@
 #include "pn532.hpp"
 
+//IPASS DEMONSTRATION CODE.
+
 int main() {
 
 	// Required pins to use this library with I2C.
@@ -14,6 +16,8 @@ int main() {
 	
 	// Fill this array with the card uid's you would like to use in your code.
 	// If your uid is only 4 bytes, pad it up with zeros as shown in this example.
+	// Ofcourse with a little programming magic this could also point to a database,
+	// or perhaps a filesystem, however this is not handled in the examples.
 	std::array<std::array<uint8_t, 7>, 2> known_uid = {{{0xA4, 0x93, 0x4F, 0x12, 0x00, 0x00, 0x00},
 														{0x02, 0x21, 0x0B, 0x21, 0x00, 0x00, 0x00}}};
 
@@ -56,4 +60,18 @@ int main() {
 		object.write_gpio( 0x00, 0x82 );
 		
 	}
+	
+	// This code is only ran when a specific uid is detected.
+	// Potential use for different levels of access.
+	if( uid == known_uid[1] ) {
+			
+			// We do stuff if we have a known uid.
+			hwlib::cout << "Found keychain uid!\n";
+			// loop a little animation over the 4 available gpios on port 3.
+			object.write_gpio( 0x81, 0x00 ); hwlib::wait_ms(200); //P30 HIGH
+			object.write_gpio( 0x82, 0x00 ); hwlib::wait_ms(200); //P31 HIGH
+			object.write_gpio( 0x88, 0x00 ); hwlib::wait_ms(200); //P33 HIGH
+			object.write_gpio( 0xA0, 0x00 ); hwlib::wait_ms(200); //P35 HIGH
+			object.write_gpio( 0x80, 0x00 ); // all back to LOW.
+		}
 }

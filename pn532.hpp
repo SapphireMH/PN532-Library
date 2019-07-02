@@ -52,7 +52,6 @@ private:
 	hwlib::target::pin_oc sda;
 	hwlib::i2c_bus_bit_banged_scl_sda i2c_bus;
 	hwlib::target::pin_out rst;
-	hwlib::target::pin_in irq;
 	const uint8_t & addr;
 	
 	// SPI required variables.
@@ -63,6 +62,7 @@ private:
 	hwlib::spi_bus_bit_banged_sclk_mosi_miso spi_bus;
 	
 	// General variables.
+	hwlib::target::pin_in irq;
 	bool using_i2c;
 	bool irq_present;
 	
