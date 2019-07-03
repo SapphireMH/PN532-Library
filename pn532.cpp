@@ -55,11 +55,11 @@ pn532::pn532( hwlib::target::pin_oc scl, hwlib::target::pin_oc sda, hwlib::targe
 /// the amount of traffic on the SPI bus. The constructor automatically resets
 /// the chip and configures it for normal operation mode.
 
-pn532::pn532( hwlib::target::pin_out sclk, hwlib::target::pin_out mosi, hwlib::target::pin_in miso, hwlib::target::pin_out sel, hwlib::target::pin_in irq, const bool irq_present ):
+pn532::pn532( hwlib::target::pin_out sclk, hwlib::target::pin_out mosi, hwlib::target::pin_in miso, hwlib::target::pin_out sel, hwlib::target::pin_out rst, hwlib::target::pin_in irq, const bool irq_present ):
 	scl( hwlib::target::pins::d0 ),
 	sda( hwlib::target::pins::d0 ),
 	i2c_bus ( hwlib::i2c_bus_bit_banged_scl_sda( scl, sda ) ),
-	rst( hwlib::target::pins::d0 ),
+	rst( rst ),
 	addr( 0 ),
 	sclk( sclk ),
 	mosi( mosi ),

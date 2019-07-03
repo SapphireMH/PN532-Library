@@ -80,7 +80,7 @@ public:
 	pn532( hwlib::target::pin_oc scl, hwlib::target::pin_oc sda, hwlib::target::pin_out rst, hwlib::target::pin_in irq = hwlib::target::pins::d0, const bool irq_present = false, const uint8_t & addr = 0x24 );
 	
 	//SPI constructor.
-	pn532( hwlib::target::pin_out sclk, hwlib::target::pin_out mosi, hwlib::target::pin_in miso, hwlib::target::pin_out sel, hwlib::target::pin_in irq = hwlib::target::pins::d0, const bool irq_present = false );
+	pn532( hwlib::target::pin_out sclk, hwlib::target::pin_out mosi, hwlib::target::pin_in miso, hwlib::target::pin_out sel, hwlib::target::pin_out rst, hwlib::target::pin_in irq = hwlib::target::pins::d0, const bool irq_present = false );
 	
 	//Functions for both I2C and SPI.
 	void get_firmware_version( std::array<uint8_t, 4> & firmware );
