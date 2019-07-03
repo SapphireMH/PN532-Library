@@ -12,7 +12,7 @@ int main() {
 	auto irq = hwlib::target::pin_in( hwlib::target::pins::d2 );
 	
 	// Create the object, "object" can be replaced with any name of your choosing.
-	pn532 object = pn532( scl, sda, rst, irq );
+	pn532 object = pn532( scl, sda, rst, irq, true );
 	
 	// Fill this array with the card uid's you would like to use in your code.
 	// If your uid is only 4 bytes, pad it up with zeros as shown in this example.

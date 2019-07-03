@@ -64,7 +64,7 @@ private:
 	// General variables.
 	hwlib::target::pin_in irq;
 	const bool using_i2c;
-	bool irq_present;
+	const bool irq_present;
 	
 	//General functions used by other functions.
 	void pn532_reset();
@@ -77,10 +77,10 @@ private:
 public:
 
 	//I2C constructor.
-	pn532( hwlib::target::pin_oc scl, hwlib::target::pin_oc sda, hwlib::target::pin_out rst, hwlib::target::pin_in irq = hwlib::target::pins::d0, const uint8_t & addr = 0x24 );
+	pn532( hwlib::target::pin_oc scl, hwlib::target::pin_oc sda, hwlib::target::pin_out rst, hwlib::target::pin_in irq = hwlib::target::pins::d0, const bool irq_present = false, const uint8_t & addr = 0x24 );
 	
 	//SPI constructor.
-	pn532( hwlib::target::pin_out sclk, hwlib::target::pin_out mosi, hwlib::target::pin_in miso, hwlib::target::pin_out sel, hwlib::target::pin_in irq = hwlib::target::pins::d0 );
+	pn532( hwlib::target::pin_out sclk, hwlib::target::pin_out mosi, hwlib::target::pin_in miso, hwlib::target::pin_out sel, hwlib::target::pin_in irq = hwlib::target::pins::d0, const bool irq_present = false );
 	
 	//Functions for both I2C and SPI.
 	void get_firmware_version( std::array<uint8_t, 4> & firmware );
