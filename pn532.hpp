@@ -63,7 +63,7 @@ private:
 	
 	// General variables.
 	hwlib::target::pin_in irq;
-	bool using_i2c;
+	const bool using_i2c;
 	bool irq_present;
 	
 	//General functions used by other functions.
@@ -71,19 +71,19 @@ private:
 	void samconfig();
 	void read_status_byte();
 	bool read_ack_nack();
-	void write( uint8_t bytes_out[], size_t & size_out, uint8_t timeout = 5 );
-	void read( uint8_t bytes_in[], size_t & size_in );
+	void write( const uint8_t bytes_out[], const size_t & size_out, uint8_t timeout = 5 );
+	void read( uint8_t bytes_in[], const size_t & size_in );
 
 public:
 
 	//I2C constructor.
-	pn532( hwlib::target::pin_oc scl, hwlib::target::pin_oc sda, hwlib::target::pin_out rst, hwlib::target::pin_in irq = hwlib::target::pins::d0, const uint8_t & addr = 0x48 );
+	pn532( hwlib::target::pin_oc scl, hwlib::target::pin_oc sda, hwlib::target::pin_out rst, hwlib::target::pin_in irq = hwlib::target::pins::d0, const uint8_t & addr = 0x24 );
 	
 	//SPI constructor.
 	pn532( hwlib::target::pin_out sclk, hwlib::target::pin_out mosi, hwlib::target::pin_in miso, hwlib::target::pin_out sel, hwlib::target::pin_in irq = hwlib::target::pins::d0 );
 	
 	//Functions for both I2C and SPI.
-	void get_firmware_version();
+	void get_firmware_version( std::array<uint8_t, 4> & firmware );
 	void read_gpio( std::array<uint8_t, 3> & gpio_states );
 	void write_gpio( uint8_t gpio_p3, uint8_t gpio_p7 );
 	void get_card_uid( std::array<uint8_t, 7> & uid );

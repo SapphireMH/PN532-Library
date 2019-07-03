@@ -31,7 +31,7 @@ pn532::pn532( hwlib::target::pin_oc scl, hwlib::target::pin_oc sda, hwlib::targe
 	sda( sda ),
 	i2c_bus ( hwlib::i2c_bus_bit_banged_scl_sda( scl, sda ) ),
 	rst( rst ),
-	addr( addr ),
+	addr( addr  ),
 	sclk( hwlib::target::pins::d0 ),
 	mosi( hwlib::target::pins::d0 ),
 	miso( hwlib::target::pins::d0 ),
@@ -115,9 +115,9 @@ void pn532::samconfig() {
 	uint8_t LCS = ~LEN + 1;
 	uint8_t DCS = ~( TFI + CC + CED[0] + CED[1] + CED[2] ) + 1;
 	
-	size_t size_out = 12;
-	size_t size_in = 9;
-	uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, CED[0], CED[1], CED[2], DCS, POSTAMBLE};
+	const size_t size_out = 12;
+	const size_t size_in = 9;
+	const uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, CED[0], CED[1], CED[2], DCS, POSTAMBLE};
 	uint8_t bytes_in[ size_in ];
 	
 	write( bytes_out, size_out );
@@ -151,7 +151,7 @@ void pn532::read_status_byte() {
 			}
 			else {
 				
-				hwlib::spi_bus::spi_transaction spi_transaction = hwlib::spi_bus::spi_transaction( spi_bus, sel );
+				hwlib::spi_bus::spi_transaction spi_transaction = spi_bus.transaction( sel );
 				spi_transaction.write( SPI_SR );
 				ready = spi_transaction.read_byte();
 				
@@ -180,7 +180,7 @@ bool pn532::read_ack_nack() {
 	}
 	else {
 		
-		hwlib::spi_bus::spi_transaction spi_transaction = hwlib::spi_bus::spi_transaction( spi_bus, sel );
+		hwlib::spi_bus::spi_transaction spi_transaction = spi_bus.transaction( sel );
 		spi_transaction.write( SPI_DR );
 		spi_transaction.read( 7, bytes_in );
 		
@@ -209,9 +209,9 @@ bool pn532::read_ack_nack() {
 /// does not acknowledge the received command, the timeout
 /// is 5 retries.
 
-void pn532::write( uint8_t bytes_out[], size_t & size_out, uint8_t timeout ) {
-
-	if( using_i2c) {
+void pn532::write( const uint8_t bytes_out[], const size_t & size_out, uint8_t timeout ) {
+	
+	if( using_i2c ) {
 		
 		// Write and read bytes on the i2c bus.
 		i2c_bus.i2c_bus::write( addr ).write( bytes_out, size_out );
@@ -229,7 +229,7 @@ void pn532::write( uint8_t bytes_out[], size_t & size_out, uint8_t timeout ) {
 	}
 	else {
 		
-		hwlib::spi_bus::spi_transaction spi_transaction = hwlib::spi_bus::spi_transaction( spi_bus, sel );
+		hwlib::spi_bus::spi_transaction spi_transaction = spi_bus.transaction( sel );
 		spi_transaction.write( SPI_DW );
 		spi_transaction.write( size_out, bytes_out );
 		read_status_byte();
@@ -247,8 +247,9 @@ void pn532::write( uint8_t bytes_out[], size_t & size_out, uint8_t timeout ) {
 
 }
 
-void pn532::read( uint8_t bytes_in[], size_t & size_in ) {
+void pn532::read( uint8_t bytes_in[], const size_t & size_in ) {
 
+	read_status_byte();
 	if( using_i2c) {
 		
 		i2c_bus.i2c_bus::read( addr ).read( bytes_in, size_in );
@@ -256,7 +257,7 @@ void pn532::read( uint8_t bytes_in[], size_t & size_in ) {
 	}
 	else {
 		
-		hwlib::spi_bus::spi_transaction spi_transaction = hwlib::spi_bus::spi_transaction( spi_bus, sel );
+		hwlib::spi_bus::spi_transaction spi_transaction = spi_bus.transaction( sel );
 		spi_transaction.write( SPI_DR );
 		spi_transaction.read( size_in, bytes_in );
 		
@@ -269,16 +270,16 @@ void pn532::read( uint8_t bytes_in[], size_t & size_in ) {
 /// This function sends out a command byte (0x02) with a
 /// request to receive the firmware version of the board.
 
-void pn532::get_firmware_version() {
+void pn532::get_firmware_version( std::array<uint8_t, 4> & firmware ) {
 
 	uint8_t CC = 0x02;
 	uint8_t LEN = 2;
 	uint8_t LCS = ~LEN + 1;
 	uint8_t DCS = ~(TFI + CC) + 1;
 	
-	size_t size_out = 9;
-	size_t size_in = 13;
-	uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, DCS, POSTAMBLE};
+	const size_t size_out = 9;
+	const size_t size_in = 13;
+	const uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, DCS, POSTAMBLE};
 	uint8_t bytes_in[ size_in ];
 	
 	write( bytes_out, size_out );
@@ -288,12 +289,11 @@ void pn532::get_firmware_version() {
 	
 	for( size_t i = 7; i < 11; i++ ) {
 		
-		//gpio_states[ i - 7 ] = bytes_in[i];
+		firmware[ i - 7 ] = bytes_in[i];
 		hwlib::cout << hwlib::hex << " " << bytes_in[i];
 		
 	}
 	hwlib::cout << "\n";
-
 }
 
 /// \brief
@@ -325,9 +325,9 @@ void pn532::read_gpio( std::array<uint8_t, 3> & gpio_states ) {
 	uint8_t LCS = ~LEN + 1;
 	uint8_t DCS = ~(TFI + CC) + 1;
 	
-	size_t size_out = 9;
-	size_t size_in = 12;
-	uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, DCS, POSTAMBLE};
+	const size_t size_out = 9;
+	const size_t size_in = 12;
+	const uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, DCS, POSTAMBLE};
 	uint8_t bytes_in[ size_in ];
 	
 	write( bytes_out, size_out );
@@ -337,7 +337,7 @@ void pn532::read_gpio( std::array<uint8_t, 3> & gpio_states ) {
 	
 	for( size_t i = 8; i < 11; i++ ) {
 		
-		//gpio_states[ i - 8 ] = bytes_in[i];
+		gpio_states[ i - 8 ] = bytes_in[i];
 		hwlib::cout << hwlib::hex << " " << bytes_in[i];
 		
 	}
@@ -380,9 +380,9 @@ void pn532::write_gpio( uint8_t gpio_p3, uint8_t gpio_p7 ) {
 	uint8_t LCS = ~LEN + 1;
 	uint8_t DCS = ~( TFI + CC + gpio_p3 + gpio_p7 ) + 1;
 	
-	size_t size_out = 11;
-	size_t size_in = 9;
-	uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, gpio_p3, gpio_p7, DCS, POSTAMBLE};
+	const size_t size_out = 11;
+	const size_t size_in = 9;
+	const uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, gpio_p3, gpio_p7, DCS, POSTAMBLE};
 	uint8_t bytes_in[ size_in ];
 	
 	write( bytes_out, size_out );
@@ -408,11 +408,11 @@ void pn532::get_card_uid( std::array<uint8_t, 7> & uid ) {
 	uint8_t LCS = ~LEN + 1;
 	uint8_t DCS = ~(TFI + CC + MaxTg + BrTy) + 1;
 	
-	size_t size_out = 11;
-	size_t size_in = 22;
-	uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, MaxTg, BrTy, DCS, POSTAMBLE};
+	const size_t size_out = 11;
+	const size_t size_in = 22;
+	const uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, MaxTg, BrTy, DCS, POSTAMBLE};
 	uint8_t bytes_in[ size_in ];
-	
+		
 	write( bytes_out, size_out );
 	read_status_byte();
 	read( bytes_in, size_in );

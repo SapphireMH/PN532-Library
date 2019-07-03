@@ -18,12 +18,14 @@ int main() {
 	// If your uid is only 4 bytes, pad it up with zeros as shown in this example.
 	// Ofcourse with a little programming magic this could also point to a database,
 	// or perhaps a filesystem, however this is not handled in the examples.
-	std::array<std::array<uint8_t, 7>, 2> known_uid = {{{0xA4, 0x93, 0x4F, 0x12, 0x00, 0x00, 0x00},
-														{0x02, 0x21, 0x0B, 0x21, 0x00, 0x00, 0x00}}};
+	const std::array<std::array<uint8_t, 7>, 2> known_uid = {{{0xA4, 0x93, 0x4F, 0x12, 0x00, 0x00, 0x00},
+															{0x02, 0x21, 0x0B, 0x21, 0x00, 0x00, 0x00}}};
+
 
 	// Read the boards hardware and firmware version.
 	// Should always be: 
-	object.get_firmware_version();
+	std::array<uint8_t, 4> firmware;
+	object.get_firmware_version( firmware );
 	
 	// Read the states of the gpio ports and places them into our array.
 	std::array<uint8_t, 3> gpio_states;
@@ -32,7 +34,7 @@ int main() {
 	// Waits untill a card gets in range, reads its uid and places that into our array.
 	std::array<uint8_t, 7> uid;
 	object.get_card_uid( uid );
-		
+			
 	// A loop to check if the received uid is known to us and does stuff
 	// based on whether or not we've added the uid into our array.
 	bool card_auth = false;
@@ -65,13 +67,13 @@ int main() {
 	// Potential use for different levels of access.
 	if( uid == known_uid[1] ) {
 			
-			// We do stuff if we have a known uid.
-			hwlib::cout << "Found keychain uid!\n";
-			// loop a little animation over the 4 available gpios on port 3.
-			object.write_gpio( 0x81, 0x00 ); hwlib::wait_ms(200); //P30 HIGH
-			object.write_gpio( 0x82, 0x00 ); hwlib::wait_ms(200); //P31 HIGH
-			object.write_gpio( 0x88, 0x00 ); hwlib::wait_ms(200); //P33 HIGH
-			object.write_gpio( 0xA0, 0x00 ); hwlib::wait_ms(200); //P35 HIGH
-			object.write_gpio( 0x80, 0x00 ); // all back to LOW.
-		}
+		// We do stuff if we have a known uid.
+		hwlib::cout << "Found keychain uid!\n";
+		// loop a little animation over the 4 available gpios on port 3.
+		object.write_gpio( 0x81, 0x00 ); hwlib::wait_ms(200); //P30 HIGH
+		object.write_gpio( 0x82, 0x00 ); hwlib::wait_ms(200); //P31 HIGH
+		object.write_gpio( 0x88, 0x00 ); hwlib::wait_ms(200); //P33 HIGH
+		object.write_gpio( 0xA0, 0x00 ); hwlib::wait_ms(200); //P35 HIGH
+		object.write_gpio( 0x80, 0x00 ); // all back to LOW.
+	}
 }
