@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+# generated stuff by bmptk
+bmptk_fixed_size_stack.c
