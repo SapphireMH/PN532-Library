@@ -7,10 +7,11 @@ int main() {
 	// Required pins to use this library with I2C.
 	auto scl = hwlib::target::pin_oc( hwlib::target::pins::scl );
 	auto sda = hwlib::target::pin_oc( hwlib::target::pins::sda );
+	auto i2c_bus = hwlib::i2c_bus_bit_banged_scl_sda( scl, sda );
 	auto rst = hwlib::target::pin_out( hwlib::target::pins::d3 );
 	
 	// Create the object, "object" can be replaced with any name of your choosing.
-	pn532 object = pn532( scl, sda, rst );
+	pn532 object = pn532( i2c_bus, rst );
 	
 	// Read the boards hardware and firmware version.
 	std::array<uint8_t, 4> firmware;

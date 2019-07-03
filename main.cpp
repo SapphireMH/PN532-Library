@@ -7,12 +7,13 @@ int main() {
 	// Required pins to use this library with I2C.
 	auto scl = hwlib::target::pin_oc( hwlib::target::pins::scl );
 	auto sda = hwlib::target::pin_oc( hwlib::target::pins::sda );
+	auto i2c_bus = hwlib::i2c_bus_bit_banged_scl_sda( scl, sda );
 	auto rst = hwlib::target::pin_out( hwlib::target::pins::d3 );
 	// Optional pin to save some bandwidth on the bus.
 	auto irq = hwlib::target::pin_in( hwlib::target::pins::d2 );
 	
 	// Create the object, "object" can be replaced with any name of your choosing.
-	pn532 object = pn532( scl, sda, rst, irq, true );
+	pn532 object = pn532( i2c_bus, rst, irq, true );
 	
 	// Fill this array with the card uid's you would like to use in your code.
 	// If your uid is only 4 bytes, pad it up with zeros as shown in this example.

@@ -8,6 +8,7 @@ int main() {
 	auto sclk = hwlib::target::pin_out( hwlib::target::pins::d2 );
 	auto mosi = hwlib::target::pin_out( hwlib::target::pins::d3 );
 	auto miso = hwlib::target::pin_in( hwlib::target::pins::d4 );
+	auto spi_bus = hwlib::spi_bus_bit_banged_sclk_mosi_miso( sclk, mosi, miso );
 	auto sel = hwlib::target::pin_out( hwlib::target::pins::d5 );
 	auto rst = hwlib::target::pin_out( hwlib::target::pins::d6 );
 	auto irq = hwlib::target::pin_in( hwlib::target::pins::d7 );
@@ -15,7 +16,7 @@ int main() {
 	const bool irq_present = true;
 	
 	// Create the object, "object" can be replaced with any name of your choosing.
-	pn532 object = pn532( sclk, mosi, miso, sel, rst, irq, irq_present );
+	pn532 object = pn532( spi_bus, sel, rst, irq, irq_present );
 	
 	// Read the boards hardware and firmware version.
 	std::array<uint8_t, 4> firmware;

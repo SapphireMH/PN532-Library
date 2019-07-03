@@ -26,20 +26,20 @@
 /// The constructor automatically resets the chip and
 /// configures it for normal operation mode.
 
-pn532::pn532( hwlib::target::pin_oc scl, hwlib::target::pin_oc sda, hwlib::target::pin_out rst, hwlib::target::pin_in irq, const uint8_t & addr ):
+pn532::pn532( hwlib::target::pin_oc scl, hwlib::target::pin_oc sda, hwlib::target::pin_out rst, hwlib::target::pin_in irq, const bool irq_present, const uint8_t & addr ):
 	scl( scl ),
 	sda( sda ),
 	i2c_bus ( hwlib::i2c_bus_bit_banged_scl_sda( scl, sda ) ),
 	rst( rst ),
-	irq( irq ),
-	addr( addr ),
+	addr( addr  ),
 	sclk( hwlib::target::pins::d0 ),
 	mosi( hwlib::target::pins::d0 ),
 	miso( hwlib::target::pins::d0 ),
 	sel( hwlib::target::pins::d0 ),
 	spi_bus( hwlib::spi_bus_bit_banged_sclk_mosi_miso( sclk, mosi, miso) ),
+	irq( irq ),
 	using_i2c( true ),
-	irq_present( true )
+	irq_present( irq_present )
 	{
 		pn532_reset();
 		samconfig();
@@ -55,20 +55,20 @@ pn532::pn532( hwlib::target::pin_oc scl, hwlib::target::pin_oc sda, hwlib::targe
 /// the amount of traffic on the SPI bus. The constructor automatically resets
 /// the chip and configures it for normal operation mode.
 
-pn532::pn532( hwlib::target::pin_out sclk, hwlib::target::pin_out mosi, hwlib::target::pin_in miso, hwlib::target::pin_out sel, hwlib::target::pin_in irq ):
+pn532::pn532( hwlib::target::pin_out sclk, hwlib::target::pin_out mosi, hwlib::target::pin_in miso, hwlib::target::pin_out sel, hwlib::target::pin_out rst, hwlib::target::pin_in irq, const bool irq_present ):
 	scl( hwlib::target::pins::d0 ),
 	sda( hwlib::target::pins::d0 ),
 	i2c_bus ( hwlib::i2c_bus_bit_banged_scl_sda( scl, sda ) ),
-	rst( hwlib::target::pins::d0 ),
-	irq( irq ),
+	rst( rst ),
 	addr( 0 ),
 	sclk( sclk ),
 	mosi( mosi ),
 	miso( miso ),
 	sel( sel ),
 	spi_bus( hwlib::spi_bus_bit_banged_sclk_mosi_miso( sclk, mosi, miso) ),
+	irq( irq ),
 	using_i2c( false ),
-	irq_present( false )
+	irq_present( irq_present )
 	{
 		pn532_reset();
 		samconfig();
@@ -108,16 +108,15 @@ void pn532::pn532_reset() {
 /// checking for the PN532 to send a READY byte. (0x01)
 
 void pn532::samconfig() {
-	
-	uint8_t CC = 0x14;
+
 	uint8_t CED[3] = {0x01, 0x00, 0x01};
 	uint8_t LEN = 5;
 	uint8_t LCS = ~LEN + 1;
-	uint8_t DCS = ~( TFI + CC + CED[0] + CED[1] + CED[2] ) + 1;
+	uint8_t DCS = ~( TFI + CC_samconfig + CED[0] + CED[1] + CED[2] ) + 1;
 	
-	size_t size_out = 12;
-	size_t size_in = 9;
-	uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, CED[0], CED[1], CED[2], DCS, POSTAMBLE};
+	const size_t size_out = 12;
+	const size_t size_in = 9;
+	const uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC_samconfig, CED[0], CED[1], CED[2], DCS, POSTAMBLE};
 	uint8_t bytes_in[ size_in ];
 	
 	write( bytes_out, size_out );
@@ -151,7 +150,7 @@ void pn532::read_status_byte() {
 			}
 			else {
 				
-				hwlib::spi_bus::spi_transaction spi_transaction = hwlib::spi_bus::spi_transaction( spi_bus, sel );
+				hwlib::spi_bus::spi_transaction spi_transaction = spi_bus.transaction( sel );
 				spi_transaction.write( SPI_SR );
 				ready = spi_transaction.read_byte();
 				
@@ -180,7 +179,7 @@ bool pn532::read_ack_nack() {
 	}
 	else {
 		
-		hwlib::spi_bus::spi_transaction spi_transaction = hwlib::spi_bus::spi_transaction( spi_bus, sel );
+		hwlib::spi_bus::spi_transaction spi_transaction = spi_bus.transaction( sel );
 		spi_transaction.write( SPI_DR );
 		spi_transaction.read( 7, bytes_in );
 		
@@ -209,9 +208,9 @@ bool pn532::read_ack_nack() {
 /// does not acknowledge the received command, the timeout
 /// is 5 retries.
 
-void pn532::write( uint8_t bytes_out[], size_t & size_out, uint8_t timeout ) {
-
-	if( using_i2c) {
+void pn532::write( const uint8_t bytes_out[], const size_t & size_out, uint8_t timeout ) {
+	
+	if( using_i2c ) {
 		
 		// Write and read bytes on the i2c bus.
 		i2c_bus.i2c_bus::write( addr ).write( bytes_out, size_out );
@@ -229,7 +228,7 @@ void pn532::write( uint8_t bytes_out[], size_t & size_out, uint8_t timeout ) {
 	}
 	else {
 		
-		hwlib::spi_bus::spi_transaction spi_transaction = hwlib::spi_bus::spi_transaction( spi_bus, sel );
+		hwlib::spi_bus::spi_transaction spi_transaction = spi_bus.transaction( sel );
 		spi_transaction.write( SPI_DW );
 		spi_transaction.write( size_out, bytes_out );
 		read_status_byte();
@@ -247,8 +246,9 @@ void pn532::write( uint8_t bytes_out[], size_t & size_out, uint8_t timeout ) {
 
 }
 
-void pn532::read( uint8_t bytes_in[], size_t & size_in ) {
+void pn532::read( uint8_t bytes_in[], const size_t & size_in ) {
 
+	read_status_byte();
 	if( using_i2c) {
 		
 		i2c_bus.i2c_bus::read( addr ).read( bytes_in, size_in );
@@ -256,7 +256,7 @@ void pn532::read( uint8_t bytes_in[], size_t & size_in ) {
 	}
 	else {
 		
-		hwlib::spi_bus::spi_transaction spi_transaction = hwlib::spi_bus::spi_transaction( spi_bus, sel );
+		hwlib::spi_bus::spi_transaction spi_transaction = spi_bus.transaction( sel );
 		spi_transaction.write( SPI_DR );
 		spi_transaction.read( size_in, bytes_in );
 		
@@ -268,32 +268,40 @@ void pn532::read( uint8_t bytes_in[], size_t & size_in ) {
 /// \details
 /// This function sends out a command byte (0x02) with a
 /// request to receive the firmware version of the board.
+/// This function reads 4 bytes, these bytes get printed to
+/// console and returned as std::array so that they can be used
+/// for other functionality.
+///
+/// The first byte is the IC version, probably 0x32.
+/// The second byte is the firmware version, probably 0x01.
+/// The 3th byte is the firmware revision.
+/// the 4th byte "support" tells which card types this chip supports
+/// 1 = ISO/IEC 14443 TypeA, 2 = ISO/IEC 14443 TypeB,
+/// 3 = SO18092, any higher number then the previous 3 means a
+/// combination, for example: 7 means that all 3 are supported.
 
-void pn532::get_firmware_version() {
+void pn532::get_firmware_version( std::array<uint8_t, 4> & firmware ) {
 
-	uint8_t CC = 0x02;
 	uint8_t LEN = 2;
 	uint8_t LCS = ~LEN + 1;
-	uint8_t DCS = ~(TFI + CC) + 1;
+	uint8_t DCS = ~(TFI + CC_get_firm) + 1;
 	
-	size_t size_out = 9;
-	size_t size_in = 13;
-	uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, DCS, POSTAMBLE};
+	const size_t size_out = 9;
+	const size_t size_in = 13;
+	const uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC_get_firm, DCS, POSTAMBLE};
 	uint8_t bytes_in[ size_in ];
 	
 	write( bytes_out, size_out );
 	read( bytes_in, size_in );
 	
-	hwlib::cout << "Firmware version:";
+	hwlib::cout << hwlib::hex << "PN532 firmware version: " << bytes_in[9] << " firmware revision: " << bytes_in[10] << "\n";
+	hwlib::cout << hwlib::hex << "PN532 IC version: " << bytes_in[8] << " Supporting: " << bytes_in[11] << "\n\n";
 	
-	for( size_t i = 7; i < 11; i++ ) {
+	for( size_t i = 8; i < 12; i++ ) {
 		
-		//gpio_states[ i - 7 ] = bytes_in[i];
-		hwlib::cout << hwlib::hex << " " << bytes_in[i];
-		
-	}
-	hwlib::cout << "\n";
+		//firmware[ i - 8 ] = bytes_in[i];
 
+	}
 }
 
 /// \brief
@@ -316,32 +324,37 @@ void pn532::get_firmware_version() {
 /// 0, 0, 0, 0, 0, P72, P71, 0
 ///
 /// I0I1 (interface select jumpers.) format:
-/// 0, 0, 0, 0, 0, 0, I1, I2
+/// 0, 0, 0, 0, 0, 0, SEL0, SEL1
 
 void pn532::read_gpio( std::array<uint8_t, 3> & gpio_states ) {
 
-	uint8_t CC = 0x0C;
 	uint8_t LEN = 2;
 	uint8_t LCS = ~LEN + 1;
-	uint8_t DCS = ~(TFI + CC) + 1;
+	uint8_t DCS = ~(TFI + uint8_t(0x0C)) + 1;
 	
-	size_t size_out = 9;
-	size_t size_in = 12;
-	uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, DCS, POSTAMBLE};
+	const size_t size_out = 9;
+	const size_t size_in = 12;
+	const uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC_read_gpio, DCS, POSTAMBLE};
 	uint8_t bytes_in[ size_in ];
 	
 	write( bytes_out, size_out );
 	read( bytes_in, size_in );
 	
-	hwlib::cout << "gpio states:";
+	hwlib::cout << "GPIO states:\n";
+	hwlib::cout << "P3: " << bytes_in[8] << "\nP7: " << bytes_in[9] << "\n";
+	
+	if( bytes_in[10] == 1 ) {
+		hwlib::cout << "SEl0 ON / SEL1 OFF\n\n"; 
+	}
+	else {
+		hwlib::cout << "SEl0 OFF / SEL1 ON\n\n";
+	}
 	
 	for( size_t i = 8; i < 11; i++ ) {
 		
-		//gpio_states[ i - 8 ] = bytes_in[i];
-		hwlib::cout << hwlib::hex << " " << bytes_in[i];
+//		gpio_states[ i - 8 ] = bytes_in[i];
 		
 	}
-	hwlib::cout << "\n";
 }
 
 /// \brief
@@ -375,14 +388,13 @@ void pn532::write_gpio( uint8_t gpio_p3, uint8_t gpio_p7 ) {
 	// Safety check, p32 and p34 are reserved and must always be high (1).
 	gpio_p3 = gpio_p3 | 0x14;
 	
-	uint8_t CC = 0x0E;
 	uint8_t LEN = 4;
 	uint8_t LCS = ~LEN + 1;
-	uint8_t DCS = ~( TFI + CC + gpio_p3 + gpio_p7 ) + 1;
+	uint8_t DCS = ~( TFI + CC_write_gpio + gpio_p3 + gpio_p7 ) + 1;
 	
-	size_t size_out = 11;
-	size_t size_in = 9;
-	uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, gpio_p3, gpio_p7, DCS, POSTAMBLE};
+	const size_t size_out = 11;
+	const size_t size_in = 9;
+	const uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC_write_gpio, gpio_p3, gpio_p7, DCS, POSTAMBLE};
 	uint8_t bytes_in[ size_in ];
 	
 	write( bytes_out, size_out );
@@ -401,20 +413,21 @@ void pn532::write_gpio( uint8_t gpio_p3, uint8_t gpio_p7 ) {
 
 void pn532::get_card_uid( std::array<uint8_t, 7> & uid ) {
 
-	uint8_t CC = 0x4A;
 	uint8_t MaxTg = 0x01;
 	uint8_t BrTy = 0x00;
 	uint8_t LEN = 4;
 	uint8_t LCS = ~LEN + 1;
-	uint8_t DCS = ~(TFI + CC + MaxTg + BrTy) + 1;
+	uint8_t DCS = ~(TFI + CC_get_uid + MaxTg + BrTy) + 1;
 	
-	size_t size_out = 11;
-	size_t size_in = 22;
-	uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC, MaxTg, BrTy, DCS, POSTAMBLE};
+	const size_t size_out = 11;
+	const size_t size_in = 22;
+	const uint8_t bytes_out[ size_out ] = {PREAMBLE, START_CODE_1, START_CODE_2, LEN, LCS, TFI, CC_get_uid, MaxTg, BrTy, DCS, POSTAMBLE};
 	uint8_t bytes_in[ size_in ];
-	
+		
 	write( bytes_out, size_out );
+	hwlib::cout << "Waiting for NFC card.\n";
 	read_status_byte();
+	hwlib::cout << "NFC card found!\n";
 	read( bytes_in, size_in );
 	
 	hwlib::cout << "Length of card UID: " << bytes_in[13] << "\n";
@@ -439,6 +452,6 @@ void pn532::get_card_uid( std::array<uint8_t, 7> & uid ) {
 			hwlib::cout << hwlib::hex << " " << bytes_in[i];
 			
 		}
-		hwlib::cout << "\n";
+		hwlib::cout << "\n\n";
 	}
 }
