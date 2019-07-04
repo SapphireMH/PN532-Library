@@ -27,14 +27,20 @@ int main() {
 	std::array<uint8_t, 7> uid;
 	object.get_card_uid( uid );
 	
-	// Set GPIO P72 to HIGH, in my case we light up a blue LED.
-	object.write_gpio( 0x00, 0x84 );
-	// Set GPIO P71 to HIGH, in my case we light up a red LED.
-	object.write_gpio( 0x00, 0x82 );
 	// loop a little animation over the 4 available gpios on port 3.
 	object.write_gpio( 0x81, 0x00 ); hwlib::wait_ms(200); //P30 HIGH
 	object.write_gpio( 0x82, 0x00 ); hwlib::wait_ms(200); //P31 HIGH
 	object.write_gpio( 0x88, 0x00 ); hwlib::wait_ms(200); //P33 HIGH
 	object.write_gpio( 0xA0, 0x00 ); hwlib::wait_ms(200); //P35 HIGH
 	object.write_gpio( 0x80, 0x00 ); // all back to LOW.
+	
+	//Read the NFC's card eeprom, specify which block to read.
+	uint8_t block = 0x03;
+	object.read_card_eeprom( block );
+	
+	
+	//Write the below array to the eeprom block.
+	//	std::array<uint8_t, 16> data = {0x1A, 0x1A, 0x1A, 0x1A, 0x1A, 0x1A, 0x1A, 0x1A,
+	//									0x1A, 0x1A, 0x1A, 0x1A, 0x1A, 0x1A, 0x1A, 0x1A};
+	//	object.write_card_eeprom( block, data );
 }
